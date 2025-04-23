@@ -1,7 +1,7 @@
 #!/bin/bash
 # install.sh - Script de instalação para VPS MCP SERVER
 # Autor: VPS MCP Server Team
-# Versão: 1.0
+# Versão: 1.1
 
 # Cores para output
 RED='\033[0;31m'
@@ -22,8 +22,40 @@ print_banner() {
     echo -e "${NC}"
     echo -e "${GREEN}VPS MCP SERVER - Instalação${NC}"
     echo -e "${YELLOW}Sistema de automação para configuração de servidores MCP${NC}"
-    echo -e "${YELLOW}Versão: 1.0${NC}"
+    echo -e "${YELLOW}Versão: 1.1${NC}"
     echo -e "${YELLOW}------------------------------------------------${NC}"
+    echo
+}
+
+# Apresentação inicial e confirmação
+welcome_message() {
+    clear
+    print_banner
+    
+    echo -e "${BLUE}Bem-vindo ao assistente de instalação do VPS MCP SERVER!${NC}"
+    echo
+    echo -e "Este script irá configurar seu servidor para funcionar como um provedor MCP"
+    echo -e "compatível com a integração ao Cursor AI, permitindo a comunicação"
+    echo -e "via plugins e funções personalizadas."
+    echo
+    echo -e "${YELLOW}O processo de instalação irá:${NC}"
+    echo -e "  - Instalar dependências necessárias"
+    echo -e "  - Configurar serviços MCP"
+    echo -e "  - Configurar regras de firewall"
+    echo -e "  - Configurar serviços systemd para inicialização automática"
+    echo
+    echo -e "${RED}ATENÇÃO:${NC} Recomendamos executar este script em um servidor limpo e dedicado"
+    echo -e "para evitar conflitos com configurações existentes."
+    echo
+    
+    read -p "Deseja continuar com a instalação? (s/n): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Ss]$ ]]; then
+        echo -e "${YELLOW}Instalação cancelada pelo usuário.${NC}"
+        exit 0
+    fi
+    
+    echo -e "${GREEN}Ótimo! Vamos prosseguir com a instalação.${NC}"
     echo
 }
 
@@ -46,9 +78,9 @@ check_distro() {
         if [[ "$OS" != *"Ubuntu"* ]] && [[ "$OS" != *"Debian"* ]]; then
             echo -e "${YELLOW}Atenção: Sistema operacional não oficialmente suportado: $OS $VER${NC}"
             echo -e "Este script foi testado apenas com Ubuntu 20.04+ e Debian 11+"
-            read -p "Deseja continuar mesmo assim? (y/n) " -n 1 -r
+            read -p "Deseja continuar mesmo assim? (s/n) " -n 1 -r
             echo
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            if [[ ! $REPLY =~ ^[Ss]$ ]]; then
                 exit 1
             fi
         fi
@@ -66,6 +98,111 @@ check_internet() {
         exit 1
     fi
     echo -e "${GREEN}Conexão com a internet verificada com sucesso${NC}"
+}
+
+# Coleta informações do usuário para configuração
+collect_user_info() {
+    echo -e "${BLUE}Configuração do VPS MCP SERVER${NC}"
+    echo -e "${YELLOW}------------------------------------------------${NC}"
+    
+    # Perguntar sobre o modo de instalação se não foi fornecido
+    if [ -z "$MODE" ]; then
+        echo -e "${YELLOW}Modos de instalação disponíveis:${NC}"
+        echo -e "  single - Instala todos os componentes em um único servidor"
+        echo -e "  app    - Instala apenas o servidor de aplicação"
+        echo -e "  db     - Instala apenas o servidor de banco de dados"
+        echo
+        read -p "Escolha o modo de instalação [single]: " MODE_INPUT
+        MODE=${MODE_INPUT:-single}
+        
+        if [[ "$MODE" != "single" && "$MODE" != "app" && "$MODE" != "db" ]]; then
+            echo -e "${RED}Modo inválido: $MODE. Use single, app ou db.${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Pedir domínio e email para certificado SSL
+    if [ -z "$DOMAIN" ]; then
+        read -p "Informe o domínio para acesso ao servidor MCP (ex: mcp.seudominio.com): " DOMAIN
+    fi
+    
+    if [ -z "$EMAIL" ]; then
+        read -p "Informe um email para notificações e certificados SSL: " EMAIL
+    fi
+    
+    # Validar domínio e email básicos
+    if [ -z "$DOMAIN" ]; then
+        echo -e "${YELLOW}Aviso: Nenhum domínio fornecido. O servidor será configurado apenas com IP.${NC}"
+    fi
+    
+    if [ -z "$EMAIL" ]; then
+        echo -e "${YELLOW}Aviso: Nenhum email fornecido. Não será possível receber notificações.${NC}"
+    fi
+    
+    # Configurações adicionais com base no modo
+    if [ "$MODE" == "single" ]; then
+        # Definir tipo de banco para modo single
+        if [ -z "$DB_TYPE" ]; then
+            echo
+            echo -e "${YELLOW}Tipos de banco de dados disponíveis:${NC}"
+            echo -e "  postgres - PostgreSQL (recomendado, suporte a vetores)"
+            echo -e "  mysql    - MySQL/MariaDB"
+            echo
+            read -p "Escolha o tipo de banco de dados [postgres]: " DB_TYPE_INPUT
+            DB_TYPE=${DB_TYPE_INPUT:-postgres}
+            
+            if [[ "$DB_TYPE" != "postgres" && "$DB_TYPE" != "mysql" ]]; then
+                echo -e "${RED}Tipo de banco de dados inválido: $DB_TYPE. Use postgres ou mysql.${NC}"
+                exit 1
+            fi
+        fi
+    fi
+    
+    # Porta do servidor
+    if [ -z "$PORT" ] || [ "$PORT" == "3000" ]; then
+        read -p "Informe a porta para o servidor MCP [3000]: " PORT_INPUT
+        PORT=${PORT_INPUT:-3000}
+        
+        if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1024 ] || [ "$PORT" -gt 65535 ]; then
+            echo -e "${RED}Porta inválida: $PORT. Use um número entre 1024 e 65535.${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Confirmar configurações
+    echo
+    echo -e "${BLUE}Resumo da configuração:${NC}"
+    echo -e "${YELLOW}------------------------------------------------${NC}"
+    echo -e "Modo de instalação: ${GREEN}$MODE${NC}"
+    
+    if [ -n "$DOMAIN" ]; then
+        echo -e "Domínio: ${GREEN}$DOMAIN${NC}"
+    else
+        echo -e "Domínio: ${YELLOW}Não configurado${NC}"
+    fi
+    
+    if [ -n "$EMAIL" ]; then
+        echo -e "Email: ${GREEN}$EMAIL${NC}"
+    else
+        echo -e "Email: ${YELLOW}Não configurado${NC}"
+    fi
+    
+    if [ "$MODE" == "single" ]; then
+        echo -e "Tipo de banco: ${GREEN}$DB_TYPE${NC}"
+    fi
+    
+    echo -e "Porta: ${GREEN}$PORT${NC}"
+    echo -e "${YELLOW}------------------------------------------------${NC}"
+    
+    read -p "Confirma estas configurações? (s/n): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Ss]$ ]]; then
+        echo -e "${YELLOW}Configuração cancelada. Execute o script novamente para recomeçar.${NC}"
+        exit 0
+    fi
+    
+    echo -e "${GREEN}Configuração confirmada! Iniciando instalação...${NC}"
+    echo
 }
 
 # Mostra menu de ajuda
@@ -92,7 +229,7 @@ show_help() {
 }
 
 # Variáveis padrão
-MODE="single"
+MODE=""
 DOMAIN=""
 EMAIL=""
 DB_TYPE="postgres"
@@ -160,14 +297,85 @@ MCP_BASE_DIR="/opt/mcp-server"
 MCP_CONFIG_DIR="/root/.mcp-server"
 MCP_LOG_DIR="/var/log/mcp-server"
 
+# Configuração do Nginx e certificado SSL
+setup_nginx_ssl() {
+    if [ -z "$DOMAIN" ]; then
+        echo -e "${YELLOW}Nenhum domínio fornecido, pulando configuração SSL...${NC}"
+        return
+    fi
+    
+    echo -e "${BLUE}Configurando Nginx e SSL para domínio $DOMAIN...${NC}"
+    
+    # Instalar Nginx e Certbot
+    apt-get install -y nginx certbot python3-certbot-nginx
+    
+    # Criar configuração do Nginx
+    cat > /etc/nginx/sites-available/mcp-server << EOF
+server {
+    listen 80;
+    server_name $DOMAIN;
+    
+    location / {
+        proxy_pass http://localhost:$PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+EOF
+    
+    # Ativar site
+    ln -sf /etc/nginx/sites-available/mcp-server /etc/nginx/sites-enabled/
+    systemctl restart nginx
+    
+    # Obter certificado SSL
+    if [ -n "$EMAIL" ]; then
+        certbot --nginx -d $DOMAIN --non-interactive --agree-tos -m $EMAIL
+    else
+        certbot --nginx -d $DOMAIN --non-interactive --agree-tos --register-unsafely-without-email
+    fi
+    
+    # Permitir portas HTTP e HTTPS no firewall
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+    
+    echo -e "${GREEN}Configuração de Nginx e SSL concluída com sucesso!${NC}"
+}
+
+# Instalação e configuração das stacks MCP
+setup_mcp_stacks() {
+    echo -e "${BLUE}Configurando stacks MCP...${NC}"
+    
+    # Criar arquivo de configuração das stacks com base no domínio
+    if [ -n "$DOMAIN" ]; then
+        local BASE_URL="https://$DOMAIN"
+    else
+        local PUBLIC_IP=$(curl -s https://api.ipify.org)
+        local BASE_URL="http://$PUBLIC_IP:$PORT"
+    fi
+    
+    # Substituir URLs nas configurações
+    sed -i "s|/api/mcp|$BASE_URL/api/mcp|g" "$MCP_BASE_DIR/mcp.json"
+    sed -i "s|/api/postgres|$BASE_URL/api/postgres|g" "$MCP_BASE_DIR/mcp.json"
+    sed -i "s|/api/storage|$BASE_URL/api/storage|g" "$MCP_BASE_DIR/mcp.json"
+    
+    echo -e "${GREEN}Stacks MCP configuradas com sucesso!${NC}"
+}
+
 # Função principal de instalação
 main() {
-    print_banner
+    # Mostrar boas-vindas e obter confirmação
+    welcome_message
     
     # Verificações iniciais
     check_root
     check_distro
     check_internet
+    
+    # Coletar informações do usuário se necessário
+    collect_user_info
     
     echo -e "${BLUE}Iniciando instalação do VPS MCP SERVER no modo: $MODE${NC}"
     
@@ -215,6 +423,14 @@ main() {
     ufw allow "$PORT/tcp"
     ufw --force enable
     
+    # Configuração do Nginx e SSL se tiver um domínio
+    if [ -n "$DOMAIN" ]; then
+        setup_nginx_ssl
+    fi
+    
+    # Configurar stacks MCP
+    setup_mcp_stacks
+    
     # Criar serviço systemd
     echo -e "${BLUE}Configurando serviço systemd...${NC}"
     cat > /etc/systemd/system/vps-mcp.service << EOF
@@ -243,6 +459,16 @@ EOF
     echo -e "${BLUE}Verificando status do serviço...${NC}"
     systemctl status vps-mcp
     
+    # Salvar informações de configuração
+    cat > "$MCP_CONFIG_DIR/install.conf" << EOF
+MODE=$MODE
+DOMAIN=$DOMAIN
+EMAIL=$EMAIL
+DB_TYPE=$DB_TYPE
+PORT=$PORT
+INSTALL_DATE=$(date '+%Y-%m-%d %H:%M:%S')
+EOF
+    
     # Mostrar informações finais
     echo
     echo -e "${GREEN}Instalação concluída com sucesso!${NC}"
@@ -250,6 +476,14 @@ EOF
     echo -e "${BLUE}Informações do servidor:${NC}"
     echo -e "IP: $PUBLIC_IP"
     echo -e "Porta MCP: $PORT"
+    
+    if [ -n "$DOMAIN" ]; then
+        echo -e "Domínio: $DOMAIN"
+        echo -e "URL de acesso: https://$DOMAIN"
+    else
+        echo -e "URL de acesso: http://$PUBLIC_IP:$PORT"
+    fi
+    
     echo -e "Modo de instalação: $MODE"
     echo -e "${YELLOW}------------------------------------------------${NC}"
     echo -e "${BLUE}Para verificar o status do serviço:${NC}"
