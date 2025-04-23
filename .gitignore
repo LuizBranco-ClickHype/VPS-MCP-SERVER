@@ -1,0 +1,47 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.development
+.env.production
+
+# Arquivos temporários
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Logs
+logs/
+*.log
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de backup
+*.bak
+*.backup
+*~
+
+# Arquivos de credenciais
+credentials.txt
+*_key
+*_token
+*.pem
+*.key
+*.cert
+
+# Diretórios específicos do projeto
+backups/
+data/
+.mcp-server/
+/configs/*.custom.json
+
+# Arquivos temporários do MCP
+mcp.json.temp
+temp_mcp.json
