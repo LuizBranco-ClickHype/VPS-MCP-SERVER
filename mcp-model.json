@@ -1,0 +1,62 @@
+{
+  "mcpServers": {
+    "vps_mcp_server": {
+      "description": "Gerenciador de infraestrutura VPS",
+      "enabled": true,
+      "autoReconnect": true,
+      "command": "curl",
+      "args": [
+        "-s",
+        "-m", "10",
+        "http://IP_DO_SERVIDOR:3000/api/mcp"
+      ],
+      "priority": "high",
+      "timeoutSeconds": 10
+    },
+    "postgresql": {
+      "description": "Banco de dados PostgreSQL com pgvector",
+      "enabled": true,
+      "autoReconnect": true,
+      "command": "curl",
+      "args": [
+        "-s",
+        "-m", "10",
+        "http://IP_DO_SERVIDOR:3000/api/postgres"
+      ],
+      "priority": "medium",
+      "timeoutSeconds": 10
+    },
+    "storage": {
+      "description": "Armazenamento de objetos S3 compatível",
+      "enabled": true,
+      "autoReconnect": true,
+      "command": "curl",
+      "args": [
+        "-s", 
+        "-m", "10",
+        "http://IP_DO_SERVIDOR:3000/api/storage"
+      ],
+      "priority": "medium",
+      "timeoutSeconds": 10
+    },
+    "context7": {
+      "description": "Acesso a documentação e conhecimento externo",
+      "enabled": true,
+      "autoReconnect": true,
+      "command": "npx",
+      "args": [
+        "-y", 
+        "@upstash/context7-mcp@latest"
+      ],
+      "priority": "high",
+      "timeoutSeconds": 15
+    }
+  },
+  "globalSettings": {
+    "logPath": "./logs/mcp-communication.log",
+    "maxRetries": 3,
+    "retryIntervalSeconds": 5,
+    "healthCheckIntervalMinutes": 10,
+    "defaultTimeout": 10
+  }
+}
