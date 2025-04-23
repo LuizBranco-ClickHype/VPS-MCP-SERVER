@@ -1,0 +1,33 @@
+{
+  "name": "vps-mcp-server",
+  "version": "1.0.0",
+  "description": "Sistema de automação para configuração de servidores com suporte ao Model Context Protocol (MCP)",
+  "main": "mcp-service.sh",
+  "scripts": {
+    "start": "bash mcp-service.sh",
+    "mcp": "bash mcp-service.sh --endpoint /api/mcp",
+    "postgres": "bash mcp-service.sh --endpoint /api/postgres",
+    "storage": "bash mcp-service.sh --endpoint /api/storage",
+    "status": "bash mcp-service.sh status",
+    "logs": "bash mcp-service.sh logs 20",
+    "setup-postgres": "bash postgres-mcp-setup.sh",
+    "test": "bash mcp-service.sh test-mcp vps_mcp_server"
+  },
+  "keywords": [
+    "mcp",
+    "cursor",
+    "ai",
+    "model-context-protocol",
+    "vps",
+    "server",
+    "automation"
+  ],
+  "author": "LuizBranco-ClickHype",
+  "license": "MIT",
+  "dependencies": {
+    "@upstash/context7-mcp": "latest",
+    "@types/node": "^22.14.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
