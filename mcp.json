@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "vps_mcp_server": {
+      "description": "Servidor MCP unificado para gerenciamento de infraestrutura",
+      "command": "bash",
+      "args": [
+        "./mcp-service.sh",
+        "--endpoint",
+        "/api/mcp"
+      ]
+    },
+    "postgresql": {
+      "description": "Acesso a banco de dados PostgreSQL com suporte a vetores",
+      "command": "bash",
+      "args": [
+        "./mcp-service.sh",
+        "--endpoint",
+        "/api/postgres"
+      ]
+    },
+    "storage": {
+      "description": "Gerenciamento de armazenamento de objetos S3 compatível",
+      "command": "bash",
+      "args": [
+        "./mcp-service.sh",
+        "--endpoint",
+        "/api/storage"
+      ]
+    },
+    "context7": {
+      "description": "Acesso a documentação e conhecimento via Context7",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  }
+}
